@@ -75,6 +75,9 @@ function App() {
           isMyTurn={
             game.isMyTurn
           }
+          food={
+            game.myBase?.food ?? 0
+          }
           onConnect={
             game.connect
           }

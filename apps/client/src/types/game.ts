@@ -20,3 +20,9 @@ export type ConnectionStatus =
   | "Conectando..."
   | "Conectado"
   | "Error de conexión";
+
+export type BaseView = {
+  id: string;
+  ownerId: string;
+  food: number;
+};

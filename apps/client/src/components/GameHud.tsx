@@ -13,6 +13,7 @@ type Props = {
 
   turnNumber: number;
   isMyTurn: boolean;
+  food: number;
 
   onConnect: () => void;
   onEndTurn: () => void;
@@ -25,6 +26,7 @@ export function GameHud({
   players,
   turnNumber,
   isMyTurn,
+  food,
   onEndTurn,
 }: Props) {
   const statusClass =
@@ -66,6 +68,20 @@ export function GameHud({
             {sessionId}
           </span>
         </div>
+      </div>
+
+      <div className="section-title">
+        Base
+      </div>
+
+      <div className="resource-card">
+        <span>
+          🍖 Comida
+        </span>
+
+        <strong>
+          {food}
+        </strong>
       </div>
 
       <div className="section-title">

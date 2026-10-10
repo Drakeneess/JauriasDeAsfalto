@@ -17,6 +17,15 @@ export const DogState = schema(
   "DogState",
 );
 
+export const BaseState = schema(
+  {
+    id: t.string(),
+    ownerId: t.string(),
+    food: t.number(),
+  },
+  "BaseState",
+);
+
 export const TileState = schema(
   {
     id: t.string(),
@@ -30,6 +39,7 @@ export const MyRoomState = schema(
   {
     players: t.map(PlayerState),
     dogs: t.map(DogState),
+    bases: t.map(BaseState),
     tiles: t.map(TileState),
 
     currentPlayerId: t.string(),

@@ -1,26 +1,38 @@
-import { useState } from "react";
-
 import {
-  Callbacks,
-  type Room,
+  useState,
+} from "react";
+
+import type {
+  Room,
 } from "@colyseus/sdk";
 
-import { colyseus } from "../game/colyseus";
+import {
+  colyseus,
+} from "../game/colyseus";
 
 import {
   sendEndTurn,
   sendMove,
 } from "../game/actions";
 
+import {
+  canMoveToTile,
+  findDogTile,
+  findMyBase,
+  findMyDog,
+} from "../game/selectors";
+
+import {
+  registerRoomCallbacks,
+} from "../game/sync/registerRoomCallbacks";
+
 import type {
+  BaseView,
   ConnectionStatus,
   DogView,
   PlayerView,
   TileView,
 } from "../types/game";
-
-type SyncedDog =
-  DogView & object;
 
 export function useGameRoom() {
   const [
@@ -66,6 +78,13 @@ export function useGameRoom() {
   );
 
   const [
+    bases,
+    setBases,
+  ] = useState<BaseView[]>(
+    [],
+  );
+
+  const [
     currentPlayerId,
     setCurrentPlayerId,
   ] = useState("");
@@ -82,7 +101,30 @@ export function useGameRoom() {
     null,
   );
 
+  function resetGame() {
+    setStatus(
+      "Desconectado",
+    );
+
+    setRoomId(null);
+    setSessionId(null);
+
+    setPlayers([]);
+    setTiles([]);
+    setDogs([]);
+    setBases([]);
+
+    setCurrentPlayerId("");
+    setTurnNumber(1);
+
+    setGameRoom(null);
+  }
+
   async function connect() {
+    if (gameRoom) {
+      return;
+    }
+
     setStatus(
       "Conectando...",
     );
@@ -93,7 +135,9 @@ export function useGameRoom() {
           "my_room",
         );
 
-      setGameRoom(room);
+      setGameRoom(
+        room,
+      );
 
       setRoomId(
         room.roomId,
@@ -103,12 +147,24 @@ export function useGameRoom() {
         room.sessionId,
       );
 
-      setStatus(
-        "Conectado",
+      registerRoomCallbacks(
+        room,
+        {
+          setPlayers,
+          setTiles,
+          setDogs,
+          setBases,
+
+          setCurrentPlayerId,
+          setTurnNumber,
+
+          onLeave:
+            resetGame,
+        },
       );
 
-      registerCallbacks(
-        room,
+      setStatus(
+        "Conectado",
       );
     } catch (error) {
       console.error(
@@ -120,242 +176,6 @@ export function useGameRoom() {
         "Error de conexión",
       );
     }
-  }
-
-  function registerCallbacks(
-    room: Room,
-  ) {
-    const callbacks =
-      Callbacks.get(room);
-
-    callbacks.onAdd(
-      "players",
-      (
-        player,
-        playerId,
-      ) => {
-        const typedPlayer =
-          player as PlayerView;
-
-        const id =
-          String(playerId);
-
-        setPlayers(
-          (current) => [
-            ...current.filter(
-              (item) =>
-                item.id !== id,
-            ),
-            {
-              id,
-              connected:
-                typedPlayer.connected,
-            },
-          ],
-        );
-      },
-    );
-
-    callbacks.onRemove(
-      "players",
-      (
-        _player,
-        playerId,
-      ) => {
-        const id =
-          String(playerId);
-
-        setPlayers(
-          (current) =>
-            current.filter(
-              (item) =>
-                item.id !== id,
-            ),
-        );
-      },
-    );
-
-    callbacks.onAdd(
-      "tiles",
-      (
-        tile,
-        tileId,
-      ) => {
-        const typedTile =
-          tile as TileView;
-
-        const id =
-          String(tileId);
-
-        setTiles(
-          (current) => [
-            ...current.filter(
-              (item) =>
-                item.id !== id,
-            ),
-            {
-              id,
-              x: typedTile.x,
-              y: typedTile.y,
-            },
-          ],
-        );
-      },
-    );
-
-    callbacks.onRemove(
-      "tiles",
-      (
-        _tile,
-        tileId,
-      ) => {
-        const id =
-          String(tileId);
-
-        setTiles(
-          (current) =>
-            current.filter(
-              (item) =>
-                item.id !== id,
-            ),
-        );
-      },
-    );
-
-    callbacks.onAdd(
-      "dogs",
-      (
-        dog,
-        dogId,
-      ) => {
-        const typedDog =
-          dog as SyncedDog;
-
-        const id =
-          String(dogId);
-
-        setDogs(
-          (current) => [
-            ...current.filter(
-              (item) =>
-                item.id !== id,
-            ),
-            {
-              id,
-              ownerId:
-                typedDog.ownerId,
-              tileId:
-                typedDog.tileId,
-            },
-          ],
-        );
-
-        callbacks.onChange(
-          typedDog,
-          () => {
-            const tileId =
-              String(
-                typedDog.tileId,
-              );
-
-            setDogs(
-              (current) =>
-                current.map(
-                  (item) =>
-                    item.id === id
-                      ? {
-                          ...item,
-                          tileId,
-                        }
-                      : item,
-                ),
-            );
-          },
-        );
-      },
-    );
-
-    callbacks.onRemove(
-      "dogs",
-      (
-        _dog,
-        dogId,
-      ) => {
-        const id =
-          String(dogId);
-
-        setDogs(
-          (current) =>
-            current.filter(
-              (item) =>
-                item.id !== id,
-            ),
-        );
-      },
-    );
-
-    callbacks.listen(
-      "currentPlayerId",
-      (
-        value: string,
-      ) => {
-        setCurrentPlayerId(
-          value,
-        );
-      },
-    );
-
-    callbacks.listen(
-      "turnNumber",
-      (
-        value: number,
-      ) => {
-        setTurnNumber(
-          value,
-        );
-      },
-    );
-
-    room.onLeave(
-      (code) => {
-        console.log(
-          "[Client] left room:",
-          code,
-        );
-
-        resetGame();
-      },
-    );
-
-    room.onError(
-      (
-        code,
-        message,
-      ) => {
-        console.error(
-          "[Client] room error:",
-          code,
-          message,
-        );
-      },
-    );
-  }
-
-  function resetGame() {
-    setStatus(
-      "Desconectado",
-    );
-
-    setPlayers([]);
-    setTiles([]);
-    setDogs([]);
-
-    setGameRoom(null);
-    setRoomId(null);
-    setSessionId(null);
-
-    setCurrentPlayerId("");
-    setTurnNumber(1);
   }
 
   function endTurn() {
@@ -386,58 +206,67 @@ export function useGameRoom() {
     sessionId;
 
   const myDog =
-    dogs.find(
-      (dog) =>
-        dog.ownerId ===
-        sessionId,
+    findMyDog(
+      dogs,
+      sessionId,
     );
 
   const myTile =
-    tiles.find(
-      (tile) =>
-        tile.id ===
-        myDog?.tileId,
+    findDogTile(
+      tiles,
+      myDog,
+    );
+
+  const myBase =
+    findMyBase(
+      bases,
+      sessionId,
     );
 
   function canMoveTo(
     tile: TileView,
   ) {
-    if (
-      !isMyTurn ||
-      players.length < 2 ||
-      !myTile
-    ) {
-      return false;
-    }
+    return canMoveToTile({
+      tile,
 
-    const distance =
-      Math.abs(
-        myTile.x -
-          tile.x,
-      ) +
-      Math.abs(
-        myTile.y -
-          tile.y,
-      );
+      origin:
+        myTile,
 
-    return distance === 1;
+      isMyTurn,
+
+      playerCount:
+        players.length,
+    });
   }
 
   return {
+    // Connection
     status,
     roomId,
     sessionId,
 
+    // Synced state
     players,
     tiles,
     dogs,
+    bases,
 
+    // Player-derived state
+    myDog,
+    myTile,
+    myBase,
+
+    // Turn state
+    currentPlayerId,
     turnNumber,
     isMyTurn,
 
+    // Commands
     connect,
     endTurn,
     moveTo,
+
+    // Rules
     canMoveTo,
   };
 }

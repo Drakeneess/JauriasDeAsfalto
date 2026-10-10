@@ -1,6 +1,7 @@
 import { Room, type Client } from "@colyseus/core";
 
 import {
+  BaseState,
   DogState,
   MyRoomState,
   PlayerState,
@@ -106,6 +107,22 @@ export class MyRoom extends Room {
       dog,
     );
 
+    const base =
+      new BaseState();
+
+    base.id =
+      `base-${client.sessionId}`;
+
+    base.ownerId =
+      client.sessionId;
+
+    base.food = 0;
+
+    this.state.bases.set(
+      client.sessionId,
+      base,
+    );
+
     if (
       this.turnOrder.length === 1
     ) {
@@ -128,6 +145,10 @@ export class MyRoom extends Room {
     console.log(
       `[Dog] ${dog.id} spawned at ${dog.tileId}`,
     );
+    
+    console.log(
+      `[Base] ${base.id} spawned at ${base.ownerId}`,
+    );
   }
 
   onLeave(client: Client) {
@@ -136,6 +157,10 @@ export class MyRoom extends Room {
     );
 
     this.state.dogs.delete(
+      client.sessionId,
+    );
+    
+    this.state.bases.delete(
       client.sessionId,
     );
 

@@ -369,3 +369,26 @@ button {
     grid-template-columns: repeat(3, 1fr);
   }
 }
+
+.resource-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 12px 14px;
+
+  border-radius: 10px;
+  border: 1px solid var(--border);
+
+  background: var(--panel-soft);
+}
+
+.resource-card span {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.resource-card strong {
+  font-size: 20px;
+  color: var(--turn);
+}

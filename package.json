@@ -3,9 +3,13 @@
     "version":  "1.0.0",
     "description":  "",
     "main":  "index.js",
-    "scripts":  {
-                    "test":  "echo \"Error: no test specified\" \u0026\u0026 exit 1"
-                },
+    "scripts": {
+        "dev:client": "pnpm --dir apps/client dev",
+        "dev:server": "pnpm --dir apps/server dev",
+        "build:client": "pnpm --dir apps/client build",
+        "build:server": "pnpm --dir apps/server build",
+        "start:server": "pnpm --dir apps/server start"
+    },
     "keywords":  [
 
                  ],

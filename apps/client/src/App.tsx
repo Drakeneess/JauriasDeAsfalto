@@ -50,28 +50,27 @@ function App() {
 
       callbacks.onAdd(
         "players",
-        (
-          player: PlayerView,
-          playerId: string,
-        ) => {
+        (player, playerId) => {
+          const typedPlayer = player as PlayerView;
+          const id = String(playerId);
+
           console.log(
             "[Client] player added:",
-            playerId,
+            id,
           );
 
           setPlayers((current) => {
             const withoutPlayer =
               current.filter(
-                (item) =>
-                  item.id !== playerId,
+                (item) => item.id !== id,
               );
 
             return [
               ...withoutPlayer,
               {
-                id: playerId,
+                id,
                 connected:
-                  player.connected,
+                  typedPlayer.connected,
               },
             ];
           });
@@ -80,19 +79,17 @@ function App() {
 
       callbacks.onRemove(
         "players",
-        (
-          _player: PlayerView,
-          playerId: string,
-        ) => {
+        (_player, playerId) => {
+          const id = String(playerId);
+
           console.log(
             "[Client] player removed:",
-            playerId,
+            id,
           );
 
           setPlayers((current) =>
             current.filter(
-              (item) =>
-                item.id !== playerId,
+              (item) => item.id !== id,
             ),
           );
         },

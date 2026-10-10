@@ -5,6 +5,7 @@ import {
 } from "@colyseus/sdk";
 
 import { colyseus } from "./game/colyseus";
+import { sendEndTurn } from "./game/actions";
 
 type PlayerView = {
   id: string;
@@ -147,7 +148,7 @@ function App() {
       return;
     }
 
-    gameRoom.send("end_turn");
+    sendEndTurn(gameRoom);
   }
 
   const isMyTurn =

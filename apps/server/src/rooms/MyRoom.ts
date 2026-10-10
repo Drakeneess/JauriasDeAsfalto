@@ -5,6 +5,11 @@ import {
   PlayerState,
 } from "./schema/MyRoomState.js";
 
+import {
+  parseGameAction,
+  type GameAction,
+} from "../game/actions.js";
+
 export class MyRoom extends Room {
   maxClients = 2;
 
@@ -16,9 +21,26 @@ export class MyRoom extends Room {
     this.state.currentPlayerId = "";
     this.state.turnNumber = 1;
 
-    this.onMessage("end_turn", (client) => {
-      this.endTurn(client);
-    });
+    this.onMessage(
+      "game_action",
+      (client, payload: unknown) => {
+        const action =
+          parseGameAction(payload);
+
+        if (!action) {
+          console.log(
+            `[Action] rejected invalid payload from ${client.sessionId}`,
+          );
+
+          return;
+        }
+
+        this.handleAction(
+          client,
+          action,
+        );
+      },
+    );
 
     console.log("[MyRoom] created");
   }
@@ -54,6 +76,21 @@ export class MyRoom extends Room {
 
     console.log(`[MyRoom] left: ${client.sessionId}`);
     console.log(`[MyRoom] players: ${this.state.players.size}`);
+  }
+
+  private handleAction(
+    client: Client,
+    action: GameAction,
+  ) {
+    console.log(
+      `[Action] ${client.sessionId} -> ${action.type}`,
+    );
+
+    switch (action.type) {
+      case "END_TURN":
+        this.endTurn(client);
+        break;
+    }
   }
 
   private endTurn(client: Client) {

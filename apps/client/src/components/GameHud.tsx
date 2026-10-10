@@ -25,90 +25,119 @@ export function GameHud({
   players,
   turnNumber,
   isMyTurn,
-  onConnect,
   onEndTurn,
 }: Props) {
-  const canPlay =
-    players.length >= 2;
+  const statusClass =
+    status === "Conectado"
+      ? "status-badge--connected"
+      : status === "Conectando..."
+        ? "status-badge--connecting"
+        : status === "Error de conexión"
+          ? "status-badge--error"
+          : "";
 
   return (
-    <>
-      <h1>
+    <aside className="panel">
+      <h1 className="game-title">
         Jaurías de Asfalto
       </h1>
 
-      <p>
-        Estado: {status}
-      </p>
-
-      {roomId && (
-        <p>
-          Room: {roomId}
-        </p>
-      )}
-
-      {sessionId && (
-        <p>
-          Session: {sessionId}
-        </p>
-      )}
-
-      <button
-        onClick={
-          onConnect
-        }
-        disabled={
-          status ===
-            "Conectado" ||
-          status ===
-            "Conectando..."
-        }
+      <div
+        className={`status-badge ${statusClass}`}
       >
-        Conectar
-      </button>
+        {status}
+      </div>
 
-      <h2>
+      <div className="section-title">
+        Partida
+      </div>
+
+      <div className="meta-list">
+        <div>
+          Room:{" "}
+          <span className="meta-value">
+            {roomId}
+          </span>
+        </div>
+
+        <div>
+          Session:{" "}
+          <span className="meta-value">
+            {sessionId}
+          </span>
+        </div>
+      </div>
+
+      <div className="section-title">
         Jugadores
-      </h2>
+      </div>
 
-      {players.map(
-        (player) => (
-          <div
-            key={
-              player.id
-            }
-          >
-            {player.id}
+      <div className="player-list">
+        {players.map(
+          (player) => {
+            const isSelf =
+              player.id ===
+              sessionId;
 
-            {player.id ===
-            sessionId
-              ? " ← Tú"
-              : ""}
-          </div>
-        ),
-      )}
+            return (
+              <div
+                key={player.id}
+                className={[
+                  "player-row",
+                  isSelf
+                    ? "player-row--self"
+                    : "",
+                ].join(" ")}
+              >
+                <span className="player-label">
+                  {player.id}
+                </span>
 
-      <h2>
-        Turno {turnNumber}
-      </h2>
+                {isSelf && (
+                  <span className="player-tag">
+                    Tú
+                  </span>
+                )}
+              </div>
+            );
+          },
+        )}
+      </div>
 
-      <p>
-        {isMyTurn
-          ? "Es tu turno"
-          : "Turno del otro jugador"}
-      </p>
+      <div
+        className={[
+          "turn-card",
+          isMyTurn
+            ? "turn-card--active"
+            : "",
+        ].join(" ")}
+      >
+        <div className="turn-number">
+          Turno {turnNumber}
+        </div>
+
+        <div className="turn-state">
+          {isMyTurn
+            ? "Es tu turno"
+            : "Turno del rival"}
+        </div>
+      </div>
 
       <button
+        className="button button-secondary"
         onClick={
           onEndTurn
         }
         disabled={
           !isMyTurn ||
-          !canPlay
+          players.length < 2
         }
+        style={{
+          marginTop: 12,
+        }}
       >
         Terminar turno
       </button>
-    </>
+    </aside>
   );
 }

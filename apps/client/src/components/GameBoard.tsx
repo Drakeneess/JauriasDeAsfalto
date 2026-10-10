@@ -34,20 +34,20 @@ export function GameBoard({
     );
 
   return (
-    <>
-      <h2>
-        Mapa
-      </h2>
+    <section className="panel board-panel">
+      <header className="board-header">
+        <div>
+          <h2 className="board-title">
+            Mapa
+          </h2>
 
-      <div
-        style={{
-          display:
-            "grid",
-          gridTemplateColumns:
-            "repeat(3, 100px)",
-          gap: "8px",
-        }}
-      >
+          <div className="board-subtitle">
+            Muévete a una zona adyacente
+          </div>
+        </div>
+      </header>
+
+      <div className="game-board">
         {sortedTiles.map(
           (tile) => {
             const dogsHere =
@@ -62,10 +62,42 @@ export function GameBoard({
                 tile,
               );
 
+            const hasSelf =
+              dogsHere.some(
+                (dog) =>
+                  dog.ownerId ===
+                  sessionId,
+              );
+
+            const hasEnemy =
+              dogsHere.some(
+                (dog) =>
+                  dog.ownerId !==
+                  sessionId,
+              );
+
+            const className = [
+              "tile",
+              canMove
+                ? "tile--movable"
+                : "",
+              hasSelf
+                ? "tile--self"
+                : "",
+              hasEnemy
+                ? "tile--enemy"
+                : "",
+            ]
+              .filter(Boolean)
+              .join(" ");
+
             return (
               <button
                 key={
                   tile.id
+                }
+                className={
+                  className
                 }
                 onClick={() =>
                   onMove(
@@ -75,56 +107,44 @@ export function GameBoard({
                 disabled={
                   !canMove
                 }
-                style={{
-                  width: 100,
-                  height: 100,
-
-                  display:
-                    "flex",
-
-                  flexDirection:
-                    "column",
-
-                  alignItems:
-                    "center",
-
-                  justifyContent:
-                    "center",
-
-                  gap: "6px",
-
-                  cursor:
-                    canMove
-                      ? "pointer"
-                      : "default",
-                }}
               >
-                <div>
-                  {tile.x},
-                  {tile.y}
+                <div className="tile-coordinates">
+                  Zona {tile.x},{tile.y}
                 </div>
 
-                {dogsHere.map(
-                  (dog) => (
-                    <div
-                      key={
-                        dog.id
-                      }
-                    >
-                      🐕{" "}
+                <div className="tile-dogs">
+                  {dogsHere.map(
+                    (dog) => {
+                      const isSelf =
+                        dog.ownerId ===
+                        sessionId;
 
-                      {dog.ownerId ===
-                      sessionId
-                        ? "Tú"
-                        : "Rival"}
-                    </div>
-                  ),
-                )}
+                      return (
+                        <div
+                          key={
+                            dog.id
+                          }
+                          className={[
+                            "dog-chip",
+                            isSelf
+                              ? "dog-chip--self"
+                              : "dog-chip--enemy",
+                          ].join(" ")}
+                        >
+                          🐕{" "}
+                          {isSelf
+                            ? "Tú"
+                            : "Rival"}
+                        </div>
+                      );
+                    },
+                  )}
+                </div>
               </button>
             );
           },
         )}
       </div>
-    </>
+    </section>
   );
 }

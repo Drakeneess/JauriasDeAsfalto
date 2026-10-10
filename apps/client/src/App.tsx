@@ -5,7 +5,10 @@ import {
 } from "@colyseus/sdk";
 
 import { colyseus } from "./game/colyseus";
-import { sendEndTurn } from "./game/actions";
+import {
+  sendEndTurn,
+  sendMove,
+} from "./game/actions";
 
 type PlayerView = {
   id: string;
@@ -16,6 +19,12 @@ type TileView = {
   id: string;
   x: number;
   y: number;
+};
+
+type DogView = {
+  id: string;
+  ownerId: string;
+  tileId: string;
 };
 
 function App() {
@@ -30,15 +39,22 @@ function App() {
 
   const [players, setPlayers] =
     useState<PlayerView[]>([]);
-    
+
   const [tiles, setTiles] =
     useState<TileView[]>([]);
 
-  const [currentPlayerId, setCurrentPlayerId] =
-    useState("");
+  const [dogs, setDogs] =
+    useState<DogView[]>([]);
 
-  const [turnNumber, setTurnNumber] =
-    useState(1);
+  const [
+    currentPlayerId,
+    setCurrentPlayerId,
+  ] = useState("");
+
+  const [
+    turnNumber,
+    setTurnNumber,
+  ] = useState(1);
 
   const [gameRoom, setGameRoom] =
     useState<Room | null>(null);
@@ -48,7 +64,9 @@ function App() {
 
     try {
       const room =
-        await colyseus.joinOrCreate("my_room");
+        await colyseus.joinOrCreate(
+          "my_room",
+        );
 
       setGameRoom(room);
 
@@ -56,51 +74,205 @@ function App() {
       setSessionId(room.sessionId);
       setStatus("Conectado");
 
-      const callbacks = Callbacks.get(room);
+      const callbacks =
+        Callbacks.get(room);
 
       callbacks.onAdd(
         "players",
-        (player, playerId) => {
-          const typedPlayer = player as PlayerView;
-          const id = String(playerId);
+        (
+          player,
+          playerId,
+        ) => {
+          const typedPlayer =
+            player as PlayerView;
+
+          const id =
+            String(playerId);
 
           console.log(
             "[Client] player added:",
             id,
           );
 
-          setPlayers((current) => {
-            const withoutPlayer =
-              current.filter(
-                (item) => item.id !== id,
-              );
+          setPlayers(
+            (current) => {
+              const withoutPlayer =
+                current.filter(
+                  (item) =>
+                    item.id !== id,
+                );
 
-            return [
-              ...withoutPlayer,
-              {
-                id,
-                connected:
-                  typedPlayer.connected,
-              },
-            ];
-          });
+              return [
+                ...withoutPlayer,
+                {
+                  id,
+                  connected:
+                    typedPlayer.connected,
+                },
+              ];
+            },
+          );
         },
       );
 
       callbacks.onRemove(
         "players",
-        (_player, playerId) => {
-          const id = String(playerId);
+        (
+          _player,
+          playerId,
+        ) => {
+          const id =
+            String(playerId);
 
           console.log(
             "[Client] player removed:",
             id,
           );
 
-          setPlayers((current) =>
-            current.filter(
-              (item) => item.id !== id,
-            ),
+          setPlayers(
+            (current) =>
+              current.filter(
+                (item) =>
+                  item.id !== id,
+              ),
+          );
+        },
+      );
+
+      callbacks.onAdd(
+        "tiles",
+        (
+          tile,
+          tileId,
+        ) => {
+          const typedTile =
+            tile as TileView;
+
+          const id =
+            String(tileId);
+
+          setTiles(
+            (current) => {
+              const withoutTile =
+                current.filter(
+                  (item) =>
+                    item.id !== id,
+                );
+
+              return [
+                ...withoutTile,
+                {
+                  id,
+                  x: typedTile.x,
+                  y: typedTile.y,
+                },
+              ];
+            },
+          );
+        },
+      );
+
+      callbacks.onRemove(
+        "tiles",
+        (
+          _tile,
+          tileId,
+        ) => {
+          const id =
+            String(tileId);
+
+          setTiles(
+            (current) =>
+              current.filter(
+                (item) =>
+                  item.id !== id,
+              ),
+          );
+        },
+      );
+
+      callbacks.onAdd(
+        "dogs",
+        (dog, dogId) => {
+          const typedDog =
+            dog as DogView & object;
+
+          const id =
+            String(dogId);
+
+          console.log(
+            "[Client] dog added:",
+            id,
+          );
+
+          setDogs(
+            (current) => [
+              ...current.filter(
+                (item) =>
+                  item.id !== id,
+              ),
+              {
+                id,
+                ownerId:
+                  typedDog.ownerId,
+                tileId:
+                  typedDog.tileId,
+              },
+            ],
+          );
+
+          callbacks.onChange(
+            typedDog,
+            () => {
+              const tileId =
+                String(
+                  typedDog.tileId,
+                );
+
+              console.log(
+                "[Client] dog moved:",
+                id,
+                "->",
+                tileId,
+              );
+
+              setDogs(
+                (current) =>
+                  current.map(
+                    (item) =>
+                      item.id === id
+                        ? {
+                            ...item,
+                            tileId,
+                          }
+                        : item,
+                  ),
+              );
+            },
+          );
+        },
+      );
+
+      callbacks.onRemove(
+        "dogs",
+        (
+          _dog,
+          dogId,
+        ) => {
+          const id =
+            String(dogId);
+
+          console.log(
+            "[Client] dog removed:",
+            id,
+          );
+
+          setDogs(
+            (current) =>
+              current.filter(
+                (item) =>
+                  item.id !== id,
+              ),
           );
         },
       );
@@ -108,42 +280,18 @@ function App() {
       callbacks.listen(
         "currentPlayerId",
         (value: string) => {
-          setCurrentPlayerId(value);
+          setCurrentPlayerId(
+            value,
+          );
         },
       );
 
       callbacks.listen(
         "turnNumber",
         (value: number) => {
-          setTurnNumber(value);
-        },
-      );
-
-      callbacks.onAdd(
-        "tiles",
-        (tile, tileId) => {
-          const typedTile =
-            tile as TileView;
-
-          const id =
-            String(tileId);
-
-          setTiles((current) => {
-            const withoutTile =
-              current.filter(
-                (item) =>
-                  item.id !== id,
-              );
-
-            return [
-              ...withoutTile,
-              {
-                id,
-                x: typedTile.x,
-                y: typedTile.y,
-              },
-            ];
-          });
+          setTurnNumber(
+            value,
+          );
         },
       );
 
@@ -153,16 +301,27 @@ function App() {
           code,
         );
 
-        setStatus("Desconectado");
+        setStatus(
+          "Desconectado",
+        );
+
         setPlayers([]);
+        setTiles([]);
+        setDogs([]);
+
         setGameRoom(null);
         setRoomId(null);
         setSessionId(null);
+
         setCurrentPlayerId("");
+        setTurnNumber(1);
       });
 
       room.onError(
-        (code, message) => {
+        (
+          code,
+          message,
+        ) => {
           console.error(
             "[Client] room error:",
             code,
@@ -176,7 +335,9 @@ function App() {
         error,
       );
 
-      setStatus("Error de conexión");
+      setStatus(
+        "Error de conexión",
+      );
     }
   }
 
@@ -185,31 +346,102 @@ function App() {
       return;
     }
 
-    sendEndTurn(gameRoom);
+    sendEndTurn(
+      gameRoom,
+    );
   }
 
   const isMyTurn =
-    currentPlayerId === sessionId;
+    currentPlayerId ===
+    sessionId;
+
+  const myDog =
+    dogs.find(
+      (dog) =>
+        dog.ownerId ===
+        sessionId,
+    );
+
+  const myTile =
+    tiles.find(
+      (tile) =>
+        tile.id ===
+        myDog?.tileId,
+    );
+
+  function canMoveTo(
+    tile: TileView,
+  ) {
+    if (
+      !isMyTurn ||
+      players.length < 2 ||
+      !myTile
+    ) {
+      return false;
+    }
+
+    const distance =
+      Math.abs(
+        myTile.x -
+          tile.x,
+      ) +
+      Math.abs(
+        myTile.y -
+          tile.y,
+      );
+
+    return distance === 1;
+  }
+
+  function moveTo(
+    tileId: string,
+  ) {
+    if (!gameRoom) {
+      return;
+    }
+
+    sendMove(
+      gameRoom,
+      tileId,
+    );
+  }
+
+  const sortedTiles =
+    [...tiles].sort(
+      (a, b) =>
+        a.y - b.y ||
+        a.x - b.x,
+    );
 
   return (
     <main>
-      <h1>Jaurías de Asfalto</h1>
+      <h1>
+        Jaurías de Asfalto
+      </h1>
 
-      <p>Estado: {status}</p>
+      <p>
+        Estado: {status}
+      </p>
 
       {roomId && (
-        <p>Room: {roomId}</p>
+        <p>
+          Room: {roomId}
+        </p>
       )}
 
       {sessionId && (
-        <p>Session: {sessionId}</p>
+        <p>
+          Session: {sessionId}
+        </p>
       )}
 
       <button
         onClick={connect}
         disabled={
-          status === "Conectado" ||
-          status === "Conectando..."
+          status ===
+            "Conectado" ||
+          status ===
+            "Conectando..."
         }
       >
         Conectar
@@ -217,17 +449,26 @@ function App() {
 
       <h2>Jugadores</h2>
 
-      {players.map((player) => (
-        <div key={player.id}>
-          {player.id}
+      {players.map(
+        (player) => (
+          <div
+            key={
+              player.id
+            }
+          >
+            {player.id}
 
-          {player.id === sessionId
-            ? " ← Tú"
-            : ""}
-        </div>
-      ))}
+            {player.id ===
+            sessionId
+              ? " ← Tú"
+              : ""}
+          </div>
+        ),
+      )}
 
-      <h2>Turno {turnNumber}</h2>
+      <h2>
+        Turno {turnNumber}
+      </h2>
 
       <p>
         {isMyTurn
@@ -251,31 +492,79 @@ function App() {
         style={{
           display: "grid",
           gridTemplateColumns:
-            "repeat(3, 80px)",
+            "repeat(3, 100px)",
           gap: "8px",
         }}
       >
-        {[...tiles]
-          .sort(
-            (a, b) =>
-              a.y - b.y ||
-              a.x - b.x,
-          )
-          .map((tile) => (
-            <div
-              key={tile.id}
-              style={{
-                width: 80,
-                height: 80,
-                border: "1px solid white",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              {tile.x},{tile.y}
-            </div>
-          ))}
+        {sortedTiles.map(
+          (tile) => {
+            const dogsHere =
+              dogs.filter(
+                (dog) =>
+                  dog.tileId ===
+                  tile.id,
+              );
+
+            const canMove =
+              canMoveTo(tile);
+
+            return (
+              <button
+                key={
+                  tile.id
+                }
+                onClick={() =>
+                  moveTo(
+                    tile.id,
+                  )
+                }
+                disabled={
+                  !canMove
+                }
+                style={{
+                  width:
+                    100,
+                  height:
+                    100,
+                  display:
+                    "flex",
+                  flexDirection:
+                    "column",
+                  alignItems:
+                    "center",
+                  justifyContent:
+                    "center",
+                  gap: "6px",
+                  cursor:
+                    canMove
+                      ? "pointer"
+                      : "default",
+                }}
+              >
+                <div>
+                  {tile.x},
+                  {tile.y}
+                </div>
+
+                {dogsHere.map(
+                  (dog) => (
+                    <div
+                      key={
+                        dog.id
+                      }
+                    >
+                      🐕{" "}
+                      {dog.ownerId ===
+                      sessionId
+                        ? "Tú"
+                        : "Rival"}
+                    </div>
+                  ),
+                )}
+              </button>
+            );
+          },
+        )}
       </div>
     </main>
   );

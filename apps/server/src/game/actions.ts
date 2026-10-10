@@ -2,8 +2,14 @@ export type EndTurnAction = {
   type: "END_TURN";
 };
 
+export type MoveAction = {
+  type: "MOVE";
+  destination: string;
+};
+
 export type GameAction =
-  | EndTurnAction;
+  | EndTurnAction
+  | MoveAction;
 
 export function parseGameAction(
   value: unknown,
@@ -21,6 +27,16 @@ export function parseGameAction(
   if (action.type === "END_TURN") {
     return {
       type: "END_TURN",
+    };
+  }
+
+  if (
+    action.type === "MOVE" &&
+    typeof action.destination === "string"
+  ) {
+    return {
+      type: "MOVE",
+      destination: action.destination,
     };
   }
 

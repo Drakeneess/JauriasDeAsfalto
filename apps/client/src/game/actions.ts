@@ -10,3 +10,16 @@ export function sendEndTurn(
     },
   );
 }
+
+export function sendMove(
+  room: Room,
+  destination: string,
+) {
+  room.send(
+    "game_action",
+    {
+      type: "MOVE",
+      destination,
+    },
+  );
+}

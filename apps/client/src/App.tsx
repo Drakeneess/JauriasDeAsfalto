@@ -1,5 +1,8 @@
 import { useState } from "react";
-import { Callbacks } from "@colyseus/sdk";
+import {
+  Callbacks,
+  type Room,
+} from "@colyseus/sdk";
 
 import { colyseus } from "./game/colyseus";
 
@@ -9,16 +12,35 @@ type PlayerView = {
 };
 
 function App() {
-  const [status, setStatus] = useState("Desconectado");
-  const [roomId, setRoomId] = useState<string | null>(null);
-  const [sessionId, setSessionId] = useState<string | null>(null);
-  const [players, setPlayers] = useState<PlayerView[]>([]);
+  const [status, setStatus] =
+    useState("Desconectado");
+
+  const [roomId, setRoomId] =
+    useState<string | null>(null);
+
+  const [sessionId, setSessionId] =
+    useState<string | null>(null);
+
+  const [players, setPlayers] =
+    useState<PlayerView[]>([]);
+
+  const [currentPlayerId, setCurrentPlayerId] =
+    useState("");
+
+  const [turnNumber, setTurnNumber] =
+    useState(1);
+
+  const [gameRoom, setGameRoom] =
+    useState<Room | null>(null);
 
   async function connect() {
     setStatus("Conectando...");
 
     try {
-      const room = await colyseus.joinOrCreate("my_room");
+      const room =
+        await colyseus.joinOrCreate("my_room");
+
+      setGameRoom(room);
 
       setRoomId(room.roomId);
       setSessionId(room.sessionId);
@@ -28,19 +50,28 @@ function App() {
 
       callbacks.onAdd(
         "players",
-        (player: PlayerView, playerId: string) => {
-          console.log("[Client] player added:", playerId);
+        (
+          player: PlayerView,
+          playerId: string,
+        ) => {
+          console.log(
+            "[Client] player added:",
+            playerId,
+          );
 
           setPlayers((current) => {
-            const withoutPlayer = current.filter(
-              (item) => item.id !== playerId,
-            );
+            const withoutPlayer =
+              current.filter(
+                (item) =>
+                  item.id !== playerId,
+              );
 
             return [
               ...withoutPlayer,
               {
                 id: playerId,
-                connected: player.connected,
+                connected:
+                  player.connected,
               },
             ];
           });
@@ -49,29 +80,81 @@ function App() {
 
       callbacks.onRemove(
         "players",
-        (_player: PlayerView, playerId: string) => {
-          console.log("[Client] player removed:", playerId);
+        (
+          _player: PlayerView,
+          playerId: string,
+        ) => {
+          console.log(
+            "[Client] player removed:",
+            playerId,
+          );
 
           setPlayers((current) =>
-            current.filter((item) => item.id !== playerId),
+            current.filter(
+              (item) =>
+                item.id !== playerId,
+            ),
           );
         },
       );
 
+      callbacks.listen(
+        "currentPlayerId",
+        (value: string) => {
+          setCurrentPlayerId(value);
+        },
+      );
+
+      callbacks.listen(
+        "turnNumber",
+        (value: number) => {
+          setTurnNumber(value);
+        },
+      );
+
       room.onLeave((code) => {
-        console.log("[Client] left room:", code);
+        console.log(
+          "[Client] left room:",
+          code,
+        );
+
         setStatus("Desconectado");
         setPlayers([]);
+        setGameRoom(null);
+        setRoomId(null);
+        setSessionId(null);
+        setCurrentPlayerId("");
       });
 
-      room.onError((code, message) => {
-        console.error("[Client] room error:", code, message);
-      });
+      room.onError(
+        (code, message) => {
+          console.error(
+            "[Client] room error:",
+            code,
+            message,
+          );
+        },
+      );
     } catch (error) {
-      console.error("[Client] join failed:", error);
+      console.error(
+        "[Client] join failed:",
+        error,
+      );
+
       setStatus("Error de conexión");
     }
   }
+
+  function endTurn() {
+    if (!gameRoom) {
+      return;
+    }
+
+    gameRoom.send("end_turn");
+  }
+
+  const isMyTurn =
+    currentPlayerId === sessionId;
 
   return (
     <main>
@@ -79,12 +162,20 @@ function App() {
 
       <p>Estado: {status}</p>
 
-      {roomId && <p>Room: {roomId}</p>}
-      {sessionId && <p>Session: {sessionId}</p>}
+      {roomId && (
+        <p>Room: {roomId}</p>
+      )}
+
+      {sessionId && (
+        <p>Session: {sessionId}</p>
+      )}
 
       <button
         onClick={connect}
-        disabled={status === "Conectado"}
+        disabled={
+          status === "Conectado" ||
+          status === "Conectando..."
+        }
       >
         Conectar
       </button>
@@ -94,9 +185,30 @@ function App() {
       {players.map((player) => (
         <div key={player.id}>
           {player.id}
-          {player.id === sessionId ? " ← Tú" : ""}
+
+          {player.id === sessionId
+            ? " ← Tú"
+            : ""}
         </div>
       ))}
+
+      <h2>Turno {turnNumber}</h2>
+
+      <p>
+        {isMyTurn
+          ? "Es tu turno"
+          : "Turno del otro jugador"}
+      </p>
+
+      <button
+        onClick={endTurn}
+        disabled={
+          !isMyTurn ||
+          players.length < 2
+        }
+      >
+        Terminar turno
+      </button>
     </main>
   );
 }

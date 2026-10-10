@@ -11,6 +11,9 @@ export const PlayerState = schema(
 export const MyRoomState = schema(
   {
     players: t.map(PlayerState),
+
+    currentPlayerId: t.string(),
+    turnNumber: t.number(),
   },
   "MyRoomState",
 );

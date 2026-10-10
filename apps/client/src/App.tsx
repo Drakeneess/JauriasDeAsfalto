@@ -12,6 +12,12 @@ type PlayerView = {
   connected: boolean;
 };
 
+type TileView = {
+  id: string;
+  x: number;
+  y: number;
+};
+
 function App() {
   const [status, setStatus] =
     useState("Desconectado");
@@ -24,6 +30,9 @@ function App() {
 
   const [players, setPlayers] =
     useState<PlayerView[]>([]);
+    
+  const [tiles, setTiles] =
+    useState<TileView[]>([]);
 
   const [currentPlayerId, setCurrentPlayerId] =
     useState("");
@@ -107,6 +116,34 @@ function App() {
         "turnNumber",
         (value: number) => {
           setTurnNumber(value);
+        },
+      );
+
+      callbacks.onAdd(
+        "tiles",
+        (tile, tileId) => {
+          const typedTile =
+            tile as TileView;
+
+          const id =
+            String(tileId);
+
+          setTiles((current) => {
+            const withoutTile =
+              current.filter(
+                (item) =>
+                  item.id !== id,
+              );
+
+            return [
+              ...withoutTile,
+              {
+                id,
+                x: typedTile.x,
+                y: typedTile.y,
+              },
+            ];
+          });
         },
       );
 
@@ -207,6 +244,39 @@ function App() {
       >
         Terminar turno
       </button>
+
+      <h2>Mapa</h2>
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns:
+            "repeat(3, 80px)",
+          gap: "8px",
+        }}
+      >
+        {[...tiles]
+          .sort(
+            (a, b) =>
+              a.y - b.y ||
+              a.x - b.x,
+          )
+          .map((tile) => (
+            <div
+              key={tile.id}
+              style={{
+                width: 80,
+                height: 80,
+                border: "1px solid white",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              {tile.x},{tile.y}
+            </div>
+          ))}
+      </div>
     </main>
   );
 }

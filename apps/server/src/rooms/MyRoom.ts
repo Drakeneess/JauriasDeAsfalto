@@ -3,12 +3,15 @@ import { Room, type Client } from "@colyseus/core";
 import {
   MyRoomState,
   PlayerState,
+  TileState,
 } from "./schema/MyRoomState.js";
 
 import {
   parseGameAction,
   type GameAction,
 } from "../game/actions.js";
+
+import { createMap } from "../game/map.js";
 
 export class MyRoom extends Room {
   maxClients = 2;
@@ -20,6 +23,25 @@ export class MyRoom extends Room {
   onCreate() {
     this.state.currentPlayerId = "";
     this.state.turnNumber = 1;
+
+    const map = createMap();
+
+    for (const tileData of map) {
+      const tile = new TileState();
+
+      tile.id = tileData.id;
+      tile.x = tileData.x;
+      tile.y = tileData.y;
+
+      this.state.tiles.set(
+        tile.id,
+        tile,
+      );
+    }
+
+    console.log(
+      `[Map] created with ${this.state.tiles.size} tiles`,
+    );
 
     this.onMessage(
       "game_action",

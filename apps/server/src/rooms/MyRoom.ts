@@ -33,6 +33,10 @@ import {
 
 import {
   createPrivatePois,
+  discoverPoiAt,
+  registerPlayerDiscoveries,
+  removePlayerDiscoveries,
+  type PlayerPoiDiscoveries,
   type PrivatePoi,
 } from "../game/poi.js";
 
@@ -50,6 +54,10 @@ export class MyRoom extends Room {
       string,
       PrivatePoi
     >();
+
+  private discoveredPoisByPlayer:
+    PlayerPoiDiscoveries =
+      new Map();
 
   onCreate() {
     this.initializeState();
@@ -71,6 +79,11 @@ export class MyRoom extends Room {
         this.turnOrder,
         client.sessionId,
       );
+
+    registerPlayerDiscoveries(
+      this.discoveredPoisByPlayer,
+      client.sessionId,
+    );
 
     console.log(
       `[MyRoom] joined: ${client.sessionId}`,
@@ -102,6 +115,10 @@ export class MyRoom extends Room {
         this.turnOrder,
         client.sessionId,
       );
+    removePlayerDiscoveries(
+      this.discoveredPoisByPlayer,
+      client.sessionId,
+    );
 
     console.log(
       `[MyRoom] left: ${client.sessionId}`,
@@ -266,7 +283,9 @@ export class MyRoom extends Room {
         destinationId,
       );
 
-    if (result.ok === false) {
+    if (
+      result.ok === false
+    ) {
       console.log(
         `[Move] rejected: ${result.reason}`,
       );
@@ -276,6 +295,11 @@ export class MyRoom extends Room {
 
     console.log(
       `[Move] ${client.sessionId}: ${result.previousTileId} -> ${result.destinationId}`,
+    );
+
+    this.discoverPoi(
+      client,
+      result.destinationId,
     );
 
     this.finishTurn();
@@ -294,6 +318,32 @@ export class MyRoom extends Room {
 
     console.log(
       `[Turn] ${result.turnNumber} -> ${result.currentPlayerId}`,
+    );
+  }
+
+  private discoverPoi(
+    client: Client,
+    tileId: string,
+  ) {
+    const discovered =
+      discoverPoiAt(
+        this.pois,
+        this.discoveredPoisByPlayer,
+        client.sessionId,
+        tileId,
+      );
+
+    if (!discovered) {
+      return;
+    }
+
+    client.send(
+      "poi_discovered",
+      discovered,
+    );
+
+    console.log(
+      `[POI] ${client.sessionId} discovered a POI`,
     );
   }
 }

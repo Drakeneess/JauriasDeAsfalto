@@ -26,3 +26,14 @@ export type BaseView = {
   ownerId: string;
   food: number;
 };
+
+export type PoiType =
+  | "BUTCHER_SHOP"
+  | "DUMPSTER"
+  | "MARKET";
+
+export type DiscoveredPoiView = {
+  id: string;
+  type: PoiType;
+  tileId: string;
+};

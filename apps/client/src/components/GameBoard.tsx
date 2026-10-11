@@ -1,4 +1,5 @@
 import type {
+  DiscoveredPoiView,
   DogView,
   TileView,
 } from "../types/game";
@@ -6,6 +7,7 @@ import type {
 type Props = {
   tiles: TileView[];
   dogs: DogView[];
+  discoveredPois: DiscoveredPoiView[];
 
   sessionId:
     string | null;
@@ -22,6 +24,7 @@ type Props = {
 export function GameBoard({
   tiles,
   dogs,
+  discoveredPois,
   sessionId,
   canMoveTo,
   onMove,
@@ -56,6 +59,28 @@ export function GameBoard({
                   dog.tileId ===
                   tile.id,
               );
+            const discoveredPoi =
+              discoveredPois.find(
+                (poi) =>
+                  poi.tileId ===
+                  tile.id,
+              );
+
+            function getPoiLabel(
+              type:
+                DiscoveredPoiView["type"],
+            ) {
+              switch (type) {
+                case "BUTCHER_SHOP":
+                  return "Carnicería";
+
+                case "DUMPSTER":
+                  return "Basurero";
+
+                case "MARKET":
+                  return "Mercado";
+              }
+            }
 
             const canMove =
               canMoveTo(
@@ -111,6 +136,14 @@ export function GameBoard({
                 <div className="tile-coordinates">
                   Zona {tile.x},{tile.y}
                 </div>
+
+                {discoveredPoi && (
+                  <div className="poi-chip">
+                    {getPoiLabel(
+                      discoveredPoi.type,
+                    )}
+                  </div>
+                )}
 
                 <div className="tile-dogs">
                   {dogsHere.map(

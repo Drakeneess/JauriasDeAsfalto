@@ -26,9 +26,14 @@ import {
   registerRoomCallbacks,
 } from "../game/sync/registerRoomCallbacks";
 
+import {
+  registerRoomMessages,
+} from "../game/messages/registerRoomMessages";
+
 import type {
   BaseView,
   ConnectionStatus,
+  DiscoveredPoiView,
   DogView,
   PlayerView,
   TileView,
@@ -85,6 +90,14 @@ export function useGameRoom() {
   );
 
   const [
+    discoveredPois,
+    setDiscoveredPois,
+  ] =
+    useState<
+      DiscoveredPoiView[]
+    >([]);
+
+  const [
     currentPlayerId,
     setCurrentPlayerId,
   ] = useState("");
@@ -113,6 +126,7 @@ export function useGameRoom() {
     setTiles([]);
     setDogs([]);
     setBases([]);
+    setDiscoveredPois([]);
 
     setCurrentPlayerId("");
     setTurnNumber(1);
@@ -160,6 +174,13 @@ export function useGameRoom() {
 
           onLeave:
             resetGame,
+        },
+      );
+
+      registerRoomMessages(
+        room,
+        {
+          setDiscoveredPois,
         },
       );
 
@@ -250,6 +271,7 @@ export function useGameRoom() {
     tiles,
     dogs,
     bases,
+    discoveredPois,
 
     // Player-derived state
     myDog,

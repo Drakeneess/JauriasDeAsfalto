@@ -93,6 +93,9 @@ function App() {
           dogs={
             game.dogs
           }
+          discoveredPois={
+            game.discoveredPois
+          }
           sessionId={
             game.sessionId
           }

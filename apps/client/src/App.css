@@ -182,3 +182,23 @@
     border-right-color: var(--border);
   }
 }
+
+.poi-chip {
+  width: fit-content;
+
+  padding: 5px 8px;
+
+  border-radius: 7px;
+
+  font-size: 12px;
+  font-weight: 700;
+
+  color: var(--turn);
+
+  background:
+    var(--turn-soft);
+
+  border:
+    1px solid
+    rgba(240, 163, 74, 0.35);
+}

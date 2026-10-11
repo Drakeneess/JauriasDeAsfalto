@@ -31,6 +31,11 @@ import {
   getTurnRejectionReason,
 } from "../game/turns.js";
 
+import {
+  createPrivatePois,
+  type PrivatePoi,
+} from "../game/poi.js";
+
 export class MyRoom extends Room {
   maxClients = 2;
 
@@ -38,11 +43,18 @@ export class MyRoom extends Room {
     new MyRoomState();
 
   private turnOrder:
-    string[] = [];
+  string[] = [];
+
+  private pois =
+    new Map<
+      string,
+      PrivatePoi
+    >();
 
   onCreate() {
     this.initializeState();
     this.initializeMap();
+    this.initializePois();
     this.registerMessages();
 
     console.log(
@@ -140,6 +152,32 @@ export class MyRoom extends Room {
 
     console.log(
       `[Map] created with ${this.state.tiles.size} tiles`,
+    );
+  }
+
+  private initializePois() {
+    const tileIds =
+      Array.from(
+        this.state.tiles.keys(),
+      );
+
+    this.pois =
+      createPrivatePois(
+        tileIds,
+      );
+
+    console.log(
+      `[POI] ${this.pois.size} private POIs generated`,
+    );
+  }
+
+  private getPoiAt(
+    tileId: string,
+  ) {
+    return (
+      this.pois.get(
+        tileId,
+      ) ?? null
     );
   }
 
